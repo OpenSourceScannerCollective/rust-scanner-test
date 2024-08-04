@@ -1,0 +1,9 @@
+[package]
+name = "baleen"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pest = "2.7.11"
+vectorscan = "0.1.0"
+winnow = "0.6.16"
