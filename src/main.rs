@@ -1,6 +1,9 @@
 use winnow::detector;
 
 mod winnow;
+mod vectorscan;
+mod pest;
+mod chumsky;
 
 fn main() {
     aws_key();
