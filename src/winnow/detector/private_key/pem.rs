@@ -4,6 +4,8 @@ use winnow::error::{ContextError, ErrMode};
 use winnow::token::{take_while};
 use crate::winnow::detector::error::{DetectorError, DetectorErrorKind};
 use crate::winnow::parser::charset;
+use openssl::pkey::PKey;
+use openssl::rsa::Rsa;
 
 // Detector for PEM Format as specified in RFC-7468:
 // https://www.rfc-editor.org/rfc/rfc7468
@@ -36,6 +38,15 @@ pub fn pem_header(input: &mut &str) -> PResult<(String, String)> {
 pub fn pem_footer(input: &mut &str) -> PResult<(String, String)> {
     pem_boundary(BOUNDARY_BEGIN_FOOTER, BOUNDARY_END, input)
 }
+pub fn calc_base64_padding(str_len: usize) -> u8 {
+    match str_len % 4 {
+        0 => 0,
+        1 => 3,
+        2 => 2,
+        3 => 1,
+        _ => unreachable!(),
+    }
+}
 
 pub fn pem_data(input: &mut &str) -> PResult<String> {
     match (
@@ -48,10 +59,11 @@ pub fn pem_data(input: &mut &str) -> PResult<String> {
             let mut data_str = String::from(data);
             data_str.retain(|c| !c.is_whitespace() );
 
-            let data_len = data_str.len();
-            if (data_len % 4 == 0 && padding == "") ||
-                (data_len % 3 == 0 && padding == "=") ||
-                (data_len % 2 == 0 && padding == "==") {
+            // let data_len = data_str.len();
+            let padding_size = calc_base64_padding(data_str.len());
+            if (padding_size == 0 && padding == "") ||
+                (padding_size == 1 && padding == "=") ||
+                (padding_size == 2 && padding == "==") {
                 Ok(format!("{}{}", data_str, padding))
             } else {
                 // invalid number of padding characters
@@ -72,6 +84,24 @@ pub fn pem_label<'s>(input: &mut &'s str) -> PResult<&'s str> {
         .parse_next(input)
 }
 
+pub fn validate_key(input: &str) -> Result<String, Box<dyn std::error::Error>> {
+
+    // Parse the PEM-encoded key
+    let key = PKey::private_key_from_pem(input.as_bytes())?;
+
+    // Get the RSA key from the parsed key
+    let rsa = key.rsa()?;
+
+    // Extract the public key
+    let public_key = Rsa::from_public_components(rsa.n().to_owned()?, rsa.e().to_owned()?)?;
+
+    // Convert the public key to PEM format
+    let pem = public_key.public_key_to_pem()?;
+
+    // Convert the PEM bytes to a string
+    Ok(String::from_utf8(pem)?)
+}
+
 pub fn parse(input: &str) -> Result<(String, String, String), DetectorError> {
     match (
         pem_header,
@@ -84,6 +114,8 @@ pub fn parse(input: &str) -> Result<(String, String, String), DetectorError> {
             if header_label != footer_label {
                 return Err(DetectorError{ kind: DetectorErrorKind::NoMatch });
             }
+
+            // let check = validate_key(data.as_str());
 
             Ok((header_label,
                 data,
