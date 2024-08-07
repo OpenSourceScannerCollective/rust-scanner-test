@@ -1,5 +1,5 @@
 [package]
-name = "baleen"
+name = "rust-scanner-test"
 version = "0.1.0"
 edition = "2021"
 
