@@ -7,5 +7,3 @@ pub(crate) mod aws;
 #[allow(dead_code)]
 pub(crate) mod private_key;
 
-#[allow(dead_code)]
-pub(crate) mod parser;

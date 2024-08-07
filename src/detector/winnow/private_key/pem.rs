@@ -3,8 +3,7 @@ use winnow::combinator::{opt, preceded, terminated};
 use winnow::error::{ContextError, ErrMode};
 use winnow::token::{take_while};
 use crate::detector::winnow::error::{DetectorError, DetectorErrorKind};
-use crate::detector::winnow::parser::charset;
-use crate::validator;
+use crate::parser::{charset, common};
 use crate::validator::private_key::pem::{make_pem, validate_key};
 
 
@@ -23,9 +22,13 @@ const BOUNDARY_END: &str = "-----";
 
 fn pem_boundary<'s>(begin: &str, end: &str, input: &mut &str) -> PResult<(String, String)> {
     match (
-        preceded(opt(take_while(0.., char::is_whitespace)),  begin),
+        preceded(
+            opt(take_while(1.., char::is_whitespace)
+        ),  begin),
         pem_label,
-        terminated(end, opt(take_while(0.., char::is_whitespace))),
+        terminated(end, opt(
+            take_while(1.., char::is_whitespace)
+        )),
     ).parse_next(input) {
         Ok((start, label,end)) => {
             Ok((String::from(label), format!("{}{}{}", start, label, end)))
@@ -43,15 +46,16 @@ pub fn pem_footer(input: &mut &str) -> PResult<(String, String)> {
 pub fn pem_data(input: &mut &str) -> PResult<String> {
     match (
         take_while(1.., charset::BASE64_WS),
+        opt(take_while(1.., charset::ASCII_WHITESPACE)),
         take_while(0.., charset::BASE64_SYMBOL_PADDING),
         Parser::void(opt(take_while(0.., char::is_whitespace)))
     ).parse_next(input) {
-        Ok( (data, padding, ())) => {
+        Ok( (data, _ws, padding, ())) => {
 
             let mut data_str = String::from(data);
-            data_str.retain(|c| !c.is_whitespace() );
+            data_str.retain(|c| !c.is_whitespace());
 
-            let padding_size = validator::private_key::pem::calc_base64_padding(data_str.len());
+            let padding_size = common::calc_base64_padding(data_str.len());
             if (padding_size == 0 && padding == "") ||
                 (padding_size == 1 && padding == "=") ||
                 (padding_size == 2 && padding == "==") {

@@ -3,7 +3,7 @@ use winnow::combinator::alt;
 use winnow::token::take_while;
 use crate::detector::winnow::error::DetectorError;
 use crate::detector::winnow::error::DetectorErrorKind;
-use crate::detector::winnow::parser::charset;
+use crate::parser::charset;
 
 fn aws_prefix<'a>(input: &mut &'a str) -> PResult<&'a str> {
     alt((

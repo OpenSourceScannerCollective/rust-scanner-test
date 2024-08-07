@@ -1,5 +1,7 @@
 mod detector;
 mod validator;
+#[allow(dead_code)]
+pub(crate) mod parser;
 
 fn main() {
     aws_key();
