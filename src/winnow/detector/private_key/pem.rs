@@ -1,4 +1,5 @@
 use winnow::{Parser, PResult};
+use winnow::error::{ContextError, ErrMode};
 use winnow::token::{take_while};
 use crate::winnow::detector::error::{DetectorError, DetectorErrorKind};
 use crate::winnow::parser::charset;
@@ -8,15 +9,15 @@ use crate::winnow::parser::charset;
 //
 // Legacy PEM file formats, as specified in RFC-1421, may not work:
 // https://www.rfc-editor.org/rfc/rfc1421
+//
+// Base64 Encoding standard:
+// https://datatracker.ietf.org/doc/html/rfc4648#section-4
 
 const BOUNDARY_BEGIN_HEADER: &str = "-----BEGIN ";
 const BOUNDARY_BEGIN_FOOTER: &str = "-----END ";
-
-// TODO: at present boundary dashes must contain one less than actually required
-// one less dash is required due to parse_label function consuming one too many characters
 const BOUNDARY_END: &str = "-----";
 
-fn pem_boundary<'s>(begin: &'s str, end: &'s str, input: &mut &'s str) -> PResult<(String, String)> {
+fn pem_boundary<'s>(begin: &str, end: &str, input: &mut &str) -> PResult<(String, String)> {
     match (
         begin,
         pem_label,
@@ -28,47 +29,39 @@ fn pem_boundary<'s>(begin: &'s str, end: &'s str, input: &mut &'s str) -> PResul
         Err(e) => Err(e)
     }
 }
-pub fn pem_header<'s>(input: &mut &'s str) -> PResult<(String, String)> {
+pub fn pem_header(input: &mut &str) -> PResult<(String, String)> {
     pem_boundary(BOUNDARY_BEGIN_HEADER, BOUNDARY_END, input)
 }
-pub fn pem_footer<'s>(input: &mut &'s str) -> PResult<(String, String)> {
+pub fn pem_footer(input: &mut &str) -> PResult<(String, String)> {
     pem_boundary(BOUNDARY_BEGIN_FOOTER, BOUNDARY_END, input)
 }
-// TODO: add constraints on padding characters (termination, max number)
-pub fn pem_data<'s>(input: &mut &'s str) -> PResult<&'s str> {
-    take_while(0.., charset::BASE64_WITH_PADDING_WS).parse_next(input)
+
+pub fn pem_data(input: &mut &str) -> PResult<String> {
+    match (
+        take_while(1.., charset::BASE64_WS),
+        take_while(0.., charset::BASE64_SYMBOL_PADDING)
+    ).parse_next(input) {
+        Ok( (data, padding)) => {
+
+            let mut data_str = String::from(data);
+            data_str.retain(|c| !c.is_whitespace() );
+
+            let data_len = data_str.len();
+            if (data_len % 4 == 0 && padding == "") ||
+                (data_len % 3 == 0 && padding == "=") ||
+                (data_len % 2 == 0 && padding == "==") {
+                Ok(format!("{}{}", data_str, padding))
+            } else {
+                // invalid number of padding characters
+                Err(ErrMode::Backtrack(ContextError::new()))
+            }
+        },
+        Err(e) => Err(e)
+    }
 }
 
-/*
-TODO: FIXME
- 1. consumes one too many characters if space or dash
- 2. does not fail parse if either consecutive rules fail
- */
-// pub fn pem_label<'s>(input: &mut &'s str) -> PResult<&'s str> {
-//     let prev_c = RefCell::new(' ');          // double space after BEGIN is invalid
-//     match take_while(0.., move |c: char| {
-//         if (c == '-' && prev_c.borrow().as_char() == '-') ||    // consecutive dashes
-//             (c == ' ' && prev_c.borrow().as_char() == ' ') {    // consecutive spaces
-//             return false;    // TODO: this should fail the parser not just stop it
-//         }
-//         *prev_c.borrow_mut() = c;
-//         match c {
-//             ' '..='`' | '{'..='~' => true,
-//             _ => false
-//         }
-//     }).parse_next(input) {
-//         Ok(input_str) => {
-//             let str_len = input_str.len();  // performance
-//             if str_len < 2  || !input_str.ends_with('-') {
-//                 return Ok(&input_str);
-//             }
-//             Ok(&input_str[..str_len - 1])
-//         },
-//         Err(e) => Err(e)
-//     }
-// }
 pub fn pem_label<'s>(input: &mut &'s str) -> PResult<&'s str> {
-    take_while(0.., (' '..=',', '.'..='`', '{'..='~'))
+    take_while(1.., (' '..=',', '.'..='`', '{'..='~'))
         .verify(|label: &str| {
             !(  label.starts_with(" ") ||
                 label.ends_with(" ") ||
@@ -84,8 +77,14 @@ pub fn parse(input: &str) -> Result<(String, String, String), DetectorError> {
         pem_footer
     ).parse_next(&mut &*input) {
         Ok(((header_label,_),data, (footer_label,_))) => {
+
+            // header and footer labels must match
+            if header_label != footer_label {
+                return Err(DetectorError{ kind: DetectorErrorKind::NoMatch });
+            }
+
             Ok((header_label,
-                String::from(data),
+                data,
                 footer_label ))
         },
         Err(_) => Err(DetectorError{ kind: DetectorErrorKind::NoMatch })

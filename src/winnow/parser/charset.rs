@@ -139,6 +139,14 @@ pub const UNICODE_WHITESPACE: ((RangeInclusive<char>, char),
     '\u{205F}',                     // Medium Mathematical Space
     '\u{3000}',                     // Ideographic Space
 );
+pub const BASE64_WS: (((RangeInclusive<char>,
+                        RangeInclusive<char>,
+                        RangeInclusive<char>),
+                       (char, char)),
+                      (RangeInclusive<char>, char)) = (
+    BASE64,
+    ASCII_WHITESPACE
+);
 pub const BASE64_WITH_PADDING_WS: (((RangeInclusive<char>,
                                      RangeInclusive<char>,
                                      RangeInclusive<char>),

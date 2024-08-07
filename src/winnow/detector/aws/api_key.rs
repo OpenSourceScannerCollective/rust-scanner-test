@@ -5,7 +5,7 @@ use crate::winnow::detector::error::DetectorError;
 use crate::winnow::detector::error::DetectorErrorKind;
 use crate::winnow::parser::charset;
 
-fn aws_prefix<'s>(input: &mut &'s str) -> PResult<&'s str> {
+fn aws_prefix<'a>(input: &mut &'a str) -> PResult<&'a str> {
     alt((
         "AKIA",
         "ABIA",
@@ -14,7 +14,7 @@ fn aws_prefix<'s>(input: &mut &'s str) -> PResult<&'s str> {
     )).parse_next(input)
 }
 
-fn aws_base64<'s>(input: &mut &'s str) -> PResult<&'s str> {
+fn aws_base64<'a>(input: &mut &'a str) -> PResult<&'a str> {
     take_while(16, charset::BASE64).parse_next(input)
 }
 
