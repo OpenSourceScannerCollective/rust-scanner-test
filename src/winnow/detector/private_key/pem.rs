@@ -102,20 +102,33 @@ pub fn validate_key(input: &str) -> Result<String, Box<dyn std::error::Error>> {
     Ok(String::from_utf8(pem)?)
 }
 
+pub fn make_pem(header: &str, data: &str, footer: &str) -> String {
+    let nl = String::from("\n");
+    [header, nl.as_str(), data, nl.as_str(), footer].concat()
+}
+
 pub fn parse(input: &str) -> Result<(String, String, String), DetectorError> {
     match (
         pem_header,
         pem_data,
         pem_footer
     ).parse_next(&mut &*input) {
-        Ok(((header_label,_),data, (footer_label,_))) => {
+        Ok(((header_label,header),data, (footer_label,footer))) => {
 
             // header and footer labels must match
             if header_label != footer_label {
                 return Err(DetectorError{ kind: DetectorErrorKind::NoMatch });
             }
 
-            // let check = validate_key(data.as_str());
+            // reconstruct the pem with parsed information
+            let pem_block = make_pem(header.as_str(), data.as_str(), footer.as_str());
+
+            // validate that it is a real key by extracting the public key
+            let check = validate_key(pem_block.as_str());
+
+            if check.is_err() {
+                return Err(DetectorError{ kind: DetectorErrorKind::Unknown });
+            }
 
             Ok((header_label,
                 data,
