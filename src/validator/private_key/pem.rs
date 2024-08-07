@@ -48,6 +48,42 @@ impl KeyValidation {
     }
 }
 
+pub enum CertificateKind {
+    Valid,
+    Invalid,
+    Unknown
+}
+
+pub enum PemKind {
+    PrivateKey,
+    PublicKey,
+    KeyPair,
+    SymmetricKey,
+    Certificate,
+    CertificateSignRequest,
+    Other,
+    Unknown,
+    Invalid
+}
+
+// TODO: determine the kind of PEM data supplied
+#[allow(unused_variables)]
+pub fn get_pem_kind(input: &str) -> PemKind {
+    PemKind::Unknown
+}
+
+// TODO: determine whether the pem formatted input is a certificate
+#[allow(unused_variables)]
+pub fn is_pem_cert(input: &str) -> CertificateKind {
+    CertificateKind::Unknown
+}
+
+// TODO: validate a certificate
+#[allow(unused_variables)]
+pub fn validate_cert(input: &str) -> KeyValidation {
+    KeyValidation::unknown()
+}
+
 pub fn validate_key(input: &str) -> KeyValidation {
 
     // Parse the PEM-encoded key
