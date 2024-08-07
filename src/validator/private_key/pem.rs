@@ -2,6 +2,17 @@ use openssl::dsa::Dsa;
 use openssl::pkey::PKey;
 use openssl::rsa::Rsa;
 
+
+pub fn calc_base64_padding(str_len: usize) -> u8 {
+    match str_len % 4 {
+        0 => 0,
+        1 => 3,
+        2 => 2,
+        3 => 1,
+        _ => unreachable!(),
+    }
+}
+
 pub fn make_pem(header: &str, data: &str, footer: &str) -> String {
     let nl = String::from("\n");
     [header, nl.as_str(), data, nl.as_str(), footer].concat()
@@ -103,7 +114,6 @@ pub fn validate_key(input: &str) -> KeyValidation {
             if dsa_g.is_err() { return KeyValidation::invalid(); }
 
             let dsa_pub_key = dsa.pub_key();
-            // if dsa_pub_key.is_err() { return KeyValidation::invalid(); }
 
             // Extract the public key
             let public_key = Dsa::from_public_components(

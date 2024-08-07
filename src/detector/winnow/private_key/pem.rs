@@ -4,6 +4,7 @@ use winnow::error::{ContextError, ErrMode};
 use winnow::token::{take_while};
 use crate::detector::winnow::error::{DetectorError, DetectorErrorKind};
 use crate::detector::winnow::parser::charset;
+use crate::validator;
 use crate::validator::private_key::pem::{make_pem, validate_key};
 
 
@@ -38,15 +39,6 @@ pub fn pem_header(input: &mut &str) -> PResult<(String, String)> {
 pub fn pem_footer(input: &mut &str) -> PResult<(String, String)> {
     pem_boundary(BOUNDARY_BEGIN_FOOTER, BOUNDARY_END, input)
 }
-pub fn calc_base64_padding(str_len: usize) -> u8 {
-    match str_len % 4 {
-        0 => 0,
-        1 => 3,
-        2 => 2,
-        3 => 1,
-        _ => unreachable!(),
-    }
-}
 
 pub fn pem_data(input: &mut &str) -> PResult<String> {
     match (
@@ -59,8 +51,7 @@ pub fn pem_data(input: &mut &str) -> PResult<String> {
             let mut data_str = String::from(data);
             data_str.retain(|c| !c.is_whitespace() );
 
-            // let data_len = data_str.len();
-            let padding_size = calc_base64_padding(data_str.len());
+            let padding_size = validator::private_key::pem::calc_base64_padding(data_str.len());
             if (padding_size == 0 && padding == "") ||
                 (padding_size == 1 && padding == "=") ||
                 (padding_size == 2 && padding == "==") {
