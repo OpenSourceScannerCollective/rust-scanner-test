@@ -1,9 +1,5 @@
-use winnow::detector;
-
-mod winnow;
-mod vectorscan;
-mod pest;
-mod chumsky;
+mod detector;
+mod validator;
 
 fn main() {
     aws_key();
@@ -13,7 +9,7 @@ fn main() {
 
 fn aws_key() {
     let test_case = r#"AKIAXR2OBLUTM8DTZV7F"#;
-    let result = detector::aws::api_key::parse(test_case);
+    let result = detector::winnow::aws::api_key::parse(test_case);
 
     if result.is_err() {
         println!("[AWS] Error: {}", result.err().unwrap());
@@ -40,7 +36,7 @@ WeiEfYqbXzm0N8mgW10pW2Ll1BfQ3rstgJ2LbIOb5fFWZy9wZnEikoIrUYI2MTpH
 zmrk4XhFJvj7p1Q+A9NUR4pvfrPsNcqSMLxH8D0FM68+l360EHyerCtqS2mChlvQ
 KrNsCithPEygwLsHI6tSRPavOqctkrv1SHrRwGziVocQnrdAOgDC6F==
 -----END RSA PRIVATE KEY-----"#;
-    let result = detector::private_key::pem::parse(test_case);
+    let result = detector::winnow::private_key::pem::parse(test_case);
 
     if result.is_err() {
         println!("[PEM] Error: {}", result.err().unwrap());

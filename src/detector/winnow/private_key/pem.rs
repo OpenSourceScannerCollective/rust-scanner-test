@@ -2,10 +2,10 @@ use winnow::{Parser, PResult};
 use winnow::combinator::{opt, preceded, terminated};
 use winnow::error::{ContextError, ErrMode};
 use winnow::token::{take_while};
-use crate::winnow::detector::error::{DetectorError, DetectorErrorKind};
-use crate::winnow::parser::charset;
-use openssl::pkey::PKey;
-use openssl::rsa::Rsa;
+use crate::detector::winnow::error::{DetectorError, DetectorErrorKind};
+use crate::detector::winnow::parser::charset;
+use crate::validator::private_key::pem::{make_pem, validate_key};
+
 
 // Detector for PEM Format as specified in RFC-7468:
 // https://www.rfc-editor.org/rfc/rfc7468
@@ -84,29 +84,6 @@ pub fn pem_label<'s>(input: &mut &'s str) -> PResult<&'s str> {
         .parse_next(input)
 }
 
-pub fn validate_key(input: &str) -> Result<String, Box<dyn std::error::Error>> {
-
-    // Parse the PEM-encoded key
-    let key = PKey::private_key_from_pem(input.as_bytes())?;
-
-    // Get the RSA key from the parsed key
-    let rsa = key.rsa()?;
-
-    // Extract the public key
-    let public_key = Rsa::from_public_components(rsa.n().to_owned()?, rsa.e().to_owned()?)?;
-
-    // Convert the public key to PEM format
-    let pem = public_key.public_key_to_pem()?;
-
-    // Convert the PEM bytes to a string
-    Ok(String::from_utf8(pem)?)
-}
-
-pub fn make_pem(header: &str, data: &str, footer: &str) -> String {
-    let nl = String::from("\n");
-    [header, nl.as_str(), data, nl.as_str(), footer].concat()
-}
-
 pub fn parse(input: &str) -> Result<(String, String, String), DetectorError> {
     match (
         pem_header,
@@ -126,7 +103,7 @@ pub fn parse(input: &str) -> Result<(String, String, String), DetectorError> {
             // validate that it is a real key by extracting the public key
             let check = validate_key(pem_block.as_str());
 
-            if check.is_err() {
+            if check.is_none() {
                 return Err(DetectorError{ kind: DetectorErrorKind::Unknown });
             }
 

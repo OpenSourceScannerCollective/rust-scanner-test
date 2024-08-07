@@ -1,7 +1,7 @@
-use crate::winnow::detector::aws;
+use crate::detector::winnow::aws;
 
 mod tests {
-    use crate::winnow::detector::error::DetectorErrorKind;
+    use crate::detector::winnow::error::DetectorErrorKind;
     use super::*;
 
     #[test]

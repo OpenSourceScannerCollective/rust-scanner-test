@@ -1,9 +1,9 @@
 use winnow::{Parser, PResult};
 use winnow::combinator::alt;
 use winnow::token::take_while;
-use crate::winnow::detector::error::DetectorError;
-use crate::winnow::detector::error::DetectorErrorKind;
-use crate::winnow::parser::charset;
+use crate::detector::winnow::error::DetectorError;
+use crate::detector::winnow::error::DetectorErrorKind;
+use crate::detector::winnow::parser::charset;
 
 fn aws_prefix<'a>(input: &mut &'a str) -> PResult<&'a str> {
     alt((

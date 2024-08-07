@@ -1,4 +1,4 @@
-use crate::winnow::detector::private_key;
+use crate::detector::winnow::private_key;
 
 mod tests {
     use winnow::Parser;
