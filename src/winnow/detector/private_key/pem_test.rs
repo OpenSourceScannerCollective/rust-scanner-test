@@ -108,9 +108,9 @@ WeiEfYqbXzm0N8mgW10pW2Ll1BfQ3rstgJ2LbIOb5fFWZy9wZnEikoIrUYI2MTpH
 zmrk4XhFJvj7p1Q+A9NUR4pvfrPsNcqSMLxH8D0FM68+l360EHyerCtqS2mChlvQ
 KrNsCithPEygwLsHI6tSRPavOqctkrv1SHrRwGziVocQnrdAOgDC6F==
 -----END RSA PRIVATE KEY-----"#;
-        let mut input = test_case;
+        let input = test_case;
 
-        let result = private_key::pem::pem_header.parse_next(&mut input);
+        let result = private_key::pem::parse(input);
         assert_eq!(result.is_err(), false);
         assert_eq!(label, result.unwrap().0.to_owned());
     }

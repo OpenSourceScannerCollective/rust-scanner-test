@@ -1,4 +1,5 @@
 use winnow::{Parser, PResult};
+use winnow::combinator::{opt, preceded, terminated};
 use winnow::error::{ContextError, ErrMode};
 use winnow::token::{take_while};
 use crate::winnow::detector::error::{DetectorError, DetectorErrorKind};
@@ -19,9 +20,9 @@ const BOUNDARY_END: &str = "-----";
 
 fn pem_boundary<'s>(begin: &str, end: &str, input: &mut &str) -> PResult<(String, String)> {
     match (
-        begin,
+        preceded(opt(take_while(0.., char::is_whitespace)),  begin),
         pem_label,
-        end,
+        terminated(end, opt(take_while(0.., char::is_whitespace))),
     ).parse_next(input) {
         Ok((start, label,end)) => {
             Ok((String::from(label), format!("{}{}{}", start, label, end)))
@@ -39,9 +40,10 @@ pub fn pem_footer(input: &mut &str) -> PResult<(String, String)> {
 pub fn pem_data(input: &mut &str) -> PResult<String> {
     match (
         take_while(1.., charset::BASE64_WS),
-        take_while(0.., charset::BASE64_SYMBOL_PADDING)
+        take_while(0.., charset::BASE64_SYMBOL_PADDING),
+        Parser::void(opt(take_while(0.., char::is_whitespace)))
     ).parse_next(input) {
-        Ok( (data, padding)) => {
+        Ok( (data, padding, ())) => {
 
             let mut data_str = String::from(data);
             data_str.retain(|c| !c.is_whitespace() );
