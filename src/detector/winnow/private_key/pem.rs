@@ -103,7 +103,7 @@ pub fn parse(input: &str) -> Result<(String, String, String), DetectorError> {
             // validate that it is a real key by extracting the public key
             let check = validate_key(pem_block.as_str());
 
-            if check.is_none() {
+            if !check.is_valid() {
                 return Err(DetectorError{ kind: DetectorErrorKind::Unknown });
             }
 

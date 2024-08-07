@@ -135,6 +135,43 @@ vhj3eVN6voMtw7o="#);
     }
 
     #[test]
+    fn tp_valid_key_dsa_1() {
+        let label = r#"DSA PRIVATE KEY"#;
+        let test_case = r#"-----BEGIN DSA PRIVATE KEY-----
+MIIBuwIBAAKBgQCoEbdAHInLUX+2kkZdaqG7cNIZk3x8g6UZCo1pqrrbNEkn1k/m
+RFOW5bU36URjaiJK2E1/iXdQ2ZDITTqvkZVzEhwF25rllsIz11UoHbsxIkQCV342
+RTCRtOIU+KHDgyV5s+/nhAWZe7a/p8PnzMFpWapEBeAvxpVGHJBjszCiEQIVAMXr
+ZihRmKMqsIKy/e0XHwHSFZRTAoGBAJDBJCYHXk+4HExhx6wuVghzeFOArSaJdEU4
+I9KDdRHTFyq9iS+TRYmaLps+m/CKRGpaPGTGCitm4UKbI8jLdIU4SShXWiNCxxYV
+xyDBV0KZ3IHhTCxPKzfexQjAAAVQyk8q3bKZvYZRxREisnlepJJLwkrqebaESFON
+mZQneQ5vAoGAQ4qHnMA06CR93UWjkGN2Ek/K47W5Q5EpLDc9VX7iLmpAiL9xFH8U
+Gxh6e6FFmzxGKpF1fWqAJKEgQRbINvFtKWBhx828YMMElEG0u/3uJEcGsiPumKF+
+zGKoyYj8mzf5egnFiFKjzV8LzxSjWAz6FkmqRNUGXqtxbjGb45uhcQ0CFFaKPjsi
+1z9fVy7ZdQljvks44bET
+-----END DSA PRIVATE KEY-----"#;
+        let input = test_case;
+
+        let mut pem_data = String::from(r#"MIIBuwIBAAKBgQCoEbdAHInLUX+2kkZdaqG7cNIZk3x8g6UZCo1pqrrbNEkn1k/m
+RFOW5bU36URjaiJK2E1/iXdQ2ZDITTqvkZVzEhwF25rllsIz11UoHbsxIkQCV342
+RTCRtOIU+KHDgyV5s+/nhAWZe7a/p8PnzMFpWapEBeAvxpVGHJBjszCiEQIVAMXr
+ZihRmKMqsIKy/e0XHwHSFZRTAoGBAJDBJCYHXk+4HExhx6wuVghzeFOArSaJdEU4
+I9KDdRHTFyq9iS+TRYmaLps+m/CKRGpaPGTGCitm4UKbI8jLdIU4SShXWiNCxxYV
+xyDBV0KZ3IHhTCxPKzfexQjAAAVQyk8q3bKZvYZRxREisnlepJJLwkrqebaESFON
+mZQneQ5vAoGAQ4qHnMA06CR93UWjkGN2Ek/K47W5Q5EpLDc9VX7iLmpAiL9xFH8U
+Gxh6e6FFmzxGKpF1fWqAJKEgQRbINvFtKWBhx828YMMElEG0u/3uJEcGsiPumKF+
+zGKoyYj8mzf5egnFiFKjzV8LzxSjWAz6FkmqRNUGXqtxbjGb45uhcQ0CFFaKPjsi
+1z9fVy7ZdQljvks44bET"#);
+        pem_data.retain(|c| !c.is_whitespace());
+
+        let result = private_key::pem::parse(input);
+        assert_eq!(result.is_err(), false);
+
+        let r = result.unwrap();
+        assert_eq!(label, r.0.to_owned());
+        assert_eq!(pem_data, r.1.to_owned());
+    }
+
+    #[test]
     fn tp_invalid_key_1() { // extra dash in header
         let test_case = r#"-----BEGIN RSA PRIVATE KEY------
 ASHpbFXorct33gBiqPfpdxodzouF2sVf2gCAqZHAmnDz9eKAcG3H7x3oPXQbwEtQ
