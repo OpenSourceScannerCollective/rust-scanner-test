@@ -1,5 +1,5 @@
 mod detector;
-mod r#type;
+mod finding_type;
 #[allow(dead_code)]
 pub(crate) mod parser;
 

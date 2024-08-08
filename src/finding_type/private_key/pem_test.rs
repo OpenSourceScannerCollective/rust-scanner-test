@@ -1,37 +1,36 @@
-mod tests {
 
-    use crate::{detector};
-    use crate::r#type::private_key::pem::PemStatus;
+use crate::{detector};
+use crate::finding_type::private_key::pem::PemStatus;
 
-    #[allow(unused_variables)]
-    fn assert_valid_key(private_key: &str, public_key: &str) {
+#[allow(unused_variables)]
+pub fn assert_valid_key(private_key: &str, public_key: &str) {
 
-        let result = detector::winnow::private_key::pem::parse(private_key);
-        assert_eq!(result.is_err(), false);
+    let result = detector::winnow::private_key::pem::parse(private_key);
+    assert_eq!(result.is_err(), false);
 
-        let mut my_pem = result.unwrap();
-        let is_valid = my_pem.validate();
-        assert_eq!(is_valid.is_err(), false);
+    let mut my_pem = result.unwrap();
+    let is_valid = my_pem.validate();
+    assert_eq!(is_valid.is_err(), false);
 
-        let validation = is_valid.unwrap();
-        assert_eq!(validation, PemStatus::Valid);
+    let validation = is_valid.unwrap();
+    assert_eq!(validation, PemStatus::Valid);
 
-        let pk_result = my_pem.get_public_key();
-        assert_eq!(pk_result.is_err(), false);
+    let pk_result = my_pem.get_public_key();
+    assert_eq!(pk_result.is_err(), false);
 
-        let public_key = pk_result.unwrap();
-        assert_eq!(public_key, public_key);
-    }
+    let public_key = pk_result.unwrap();
+    assert_eq!(public_key, public_key);
+}
 
-    #[warn(unused_variables)]
-    fn assert_invalid_key(private_key: &str) {
-        let result = detector::winnow::private_key::pem::parse(private_key);
-        assert_eq!(result.is_err(), true);
-    }
+#[warn(unused_variables)]
+pub fn assert_invalid_key(private_key: &str) {
+    let result = detector::winnow::private_key::pem::parse(private_key);
+    assert_eq!(result.is_err(), true);
+}
 
-    #[test]
-    fn tp_valid_key_rsa_1() {
-        let private_key = r#"-----BEGIN PRIVATE KEY-----
+#[test]
+fn tp_valid_key_rsa_1() {
+    let private_key = r#"-----BEGIN PRIVATE KEY-----
 MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBANd4azcpShA5I9Vs
 tJDUKoJP5E30EkFc/OM4waLMZ+PHNDghxOiDzrIknA0kUTfBwN+ykOpHYVmIo66/
 5tJ5pV6EXXyFtqSyi3rORf+Hr08L3c2F3+S0AahRymSpru2/C25QTRd15Y28DNC3
@@ -48,7 +47,7 @@ gOB36ex0dUdXhOPqQf3EZPMeMS28kKcPMloPWbmz1IFiQK/HWpmr7yb3qKCdvhgP
 vhj3eVN6voMtw7o=
 -----END PRIVATE KEY-----"#;
 
-        let public_key = r#"-----BEGIN PUBLIC KEY-----
+    let public_key = r#"-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXeGs3KUoQOSPVbLSQ1CqCT+RN
 9BJBXPzjOMGizGfjxzQ4IcTog86yJJwNJFE3wcDfspDqR2FZiKOuv+bSeaVehF18
 hbaksot6zkX/h69PC93Nhd/ktAGoUcpkqa7tvwtuUE0XdeWNvAzQt0M1wRtGFZi4
@@ -56,12 +55,12 @@ ieOIX7h19RxFbXzOxwIDAQAB
 -----END PUBLIC KEY-----
 "#; // openssl adds a newline
 
-        assert_valid_key(private_key, public_key);
-    }
+    assert_valid_key(private_key, public_key);
+}
 
-    #[test]
-    fn fp_invalid_key_rsa_1() {
-        let private_key = r#"-----BEGIN PRIVATE KEY-----
+#[test]
+fn fp_invalid_key_rsa_1() {
+    let private_key = r#"-----BEGIN PRIVATE KEY-----
 MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBANd4azcpShA5I9Vs
 tJDUKoJP5E30EkFc/OM4waLMZ+PHNDghxOiDzrIknA0kUTfBwN+ykOpHYVmIo66/
 5tJ5pV6EXXyFtqSyi3rORf+Hr08L3c2F3+S0AahRymSpru2/C25QTRd15Y28DNC3
@@ -78,12 +77,12 @@ gOB36ex0dUdXhOPqQf3EZPMeMS28kKcPMloPWbmz1IFiQK/HWpmr7yb3qKCdvhgP
 vhj3eVN6voMtw7o=
 -----END PRIVATE KEY-----"#;
 
-        assert_invalid_key(private_key);
-    }
+    assert_invalid_key(private_key);
+}
 
-    #[test]
-    fn tp_valid_key_dsa_1() {
-        let private_key = r#"-----BEGIN DSA PRIVATE KEY-----
+#[test]
+fn tp_valid_key_dsa_1() {
+    let private_key = r#"-----BEGIN DSA PRIVATE KEY-----
 MIIBuwIBAAKBgQCoEbdAHInLUX+2kkZdaqG7cNIZk3x8g6UZCo1pqrrbNEkn1k/m
 RFOW5bU36URjaiJK2E1/iXdQ2ZDITTqvkZVzEhwF25rllsIz11UoHbsxIkQCV342
 RTCRtOIU+KHDgyV5s+/nhAWZe7a/p8PnzMFpWapEBeAvxpVGHJBjszCiEQIVAMXr
@@ -96,7 +95,7 @@ zGKoyYj8mzf5egnFiFKjzV8LzxSjWAz6FkmqRNUGXqtxbjGb45uhcQ0CFFaKPjsi
 1z9fVy7ZdQljvks44bET
 -----END DSA PRIVATE KEY-----"#;
 
-        let public_key = r#"-----BEGIN PUBLIC KEY-----
+    let public_key = r#"-----BEGIN PUBLIC KEY-----
 MIIBtzCCASwGByqGSM44BAEwggEfAoGBAKgRt0AcictRf7aSRl1qobtw0hmTfHyD
 pRkKjWmquts0SSfWT+ZEU5bltTfpRGNqIkrYTX+Jd1DZkMhNOq+RlXMSHAXbmuWW
 wjPXVSgduzEiRAJXfjZFMJG04hT4ocODJXmz7+eEBZl7tr+nw+fMwWlZqkQF4C/G
@@ -110,12 +109,12 @@ XqtxbjGb45uhcQ0=
 -----END PUBLIC KEY-----
 "#; // openssl adds a newline
 
-        assert_valid_key(private_key, public_key);
-    }
+    assert_valid_key(private_key, public_key);
+}
 
-    #[test]
-    fn fp_invalid_key_dsa_1() {
-        let private_key = r#"-----BEGIN DSA PRIVATE KEY-----
+#[test]
+fn fp_invalid_key_dsa_1() {
+    let private_key = r#"-----BEGIN DSA PRIVATE KEY-----
 MIIBuwIBAAKBgQCoEbdAHInLUX+2kkZdaqG7cNIZk3x8g6UZCo1pqrrbNEkn1k/m
 RFOW5bU36URjaiJK2E1/iXdQ2ZDITTqvkZVzEhwF25rllsIz11UoHbsxIkQCV342
 RTCRtOIU+KHDgyV5s+/nhAWZe7a/p8PnzMFpWapEBeAvxpVGHJBjszCiEQIVAMXr
@@ -128,7 +127,5 @@ zGKoyYj8mzf5egnFiFKjzV8LzxSjWAz6FkmqRNUGXqtxbjGb45uhcQ0CFFaKPjsi
 1z9fVy7ZdQljvks44bET
 -----END DSA PRIVATE KEY-----"#;
 
-        assert_invalid_key(private_key);
-    }
-
+    assert_invalid_key(private_key);
 }

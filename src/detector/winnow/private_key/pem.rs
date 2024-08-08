@@ -4,7 +4,7 @@ use winnow::error::{ContextError, ErrMode};
 use winnow::token::{take_while};
 use crate::detector::winnow::error::{DetectorError, DetectorErrorKind};
 use crate::parser::{charset};
-use crate::r#type::private_key::pem::{
+use crate::finding_type::private_key::pem::{
     BOUNDARY_BEGIN_FOOTER,
     BOUNDARY_BEGIN_HEADER,
     BOUNDARY_END,
