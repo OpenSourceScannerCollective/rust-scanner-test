@@ -131,7 +131,7 @@ vhj3eVN6voMtw7o="#);
 
         let my_pem = result.unwrap();
         assert_eq!(label, my_pem.header_label);
-        assert_eq!(pem_data, my_pem.data.raw().to_owned());
+        assert_eq!(pem_data, my_pem.data.raw.to_owned());
     }
 
     #[test]
@@ -168,7 +168,7 @@ zGKoyYj8mzf5egnFiFKjzV8LzxSjWAz6FkmqRNUGXqtxbjGb45uhcQ0CFFaKPjsi
 
         let my_pem = result.unwrap();
         assert_eq!(label, my_pem.header_label);
-        assert_eq!(pem_data, my_pem.data.raw().to_owned());
+        assert_eq!(pem_data, my_pem.data.raw.to_owned());
     }
 
     #[test]

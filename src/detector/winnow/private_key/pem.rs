@@ -4,7 +4,13 @@ use winnow::error::{ContextError, ErrMode};
 use winnow::token::{take_while};
 use crate::detector::winnow::error::{DetectorError, DetectorErrorKind};
 use crate::parser::{charset};
-use crate::r#type::private_key::pem::{BOUNDARY_BEGIN_FOOTER, BOUNDARY_BEGIN_HEADER, BOUNDARY_END, Pem, PemData};
+use crate::r#type::private_key::pem::{
+    BOUNDARY_BEGIN_FOOTER,
+    BOUNDARY_BEGIN_HEADER,
+    BOUNDARY_END,
+    Pem,
+    PemData
+};
 
 
 // Detector for PEM Format as specified in RFC-7468:
@@ -49,13 +55,11 @@ pub fn pem_data<'s>(input: &mut  &'s str) -> PResult<String> {
     ).parse_next(input) {
         Ok( (data, (), padding, ())) => {
 
+            // strip all whitespace from data component
             let mut data_str = String::from(data);
             data_str.retain(|c| !c.is_whitespace());
 
-            let padding_size = PemData::calc_base64_padding(data_str.len());
-            if (padding_size == 0 && padding == "") ||
-                (padding_size == 1 && padding == "=") ||
-                (padding_size == 2 && padding == "==") {
+            if PemData::validate_padding(data_str.as_str(), padding) {
                 data_str.push_str(padding);
                 Ok(data_str)
             } else {
@@ -93,7 +97,9 @@ pub fn parse(input: &str) -> Result<Pem, DetectorError> {
                 return Err(DetectorError{ kind: DetectorErrorKind::NoMatch });
             }
 
-            match Pem::from(header_label.to_string(), data, footer_label.to_string()) {
+            let raw = Pem::format_pem_str(header_label.to_string(), data.to_string());
+
+            match Pem::from(raw, header_label.to_string(), data, footer_label.to_string()) {
                 Ok(my_pem) => Ok(my_pem),
                 Err(_) => Err(DetectorError{ kind: DetectorErrorKind::Unknown })
             }
