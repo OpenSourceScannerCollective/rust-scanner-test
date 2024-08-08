@@ -353,17 +353,12 @@ impl Pem {
 
     pub fn public_key_from_pem(input: &Pem) -> Result<String, PemErr> {
         match Pem::get_private_key(input) {
-            Ok(pkey) => {
-
-                let pub_key = match pkey.public_key_to_pem() {
-                    Ok(the_key) => the_key,
-                    Err(_) => { return Err(PemErr::ValidationError); }
-                };
-
-                match String::from_utf8(pub_key) {
-                    Ok(pem_string) => Ok(pem_string),
-                    Err(_) => Err(PemErr::ValidationError)
-                }
+            Ok(pkey) => match pkey.public_key_to_pem() {
+                    Ok(the_key) => match String::from_utf8(the_key) {
+                        Ok(pem_string) => Ok(pem_string),
+                        Err(_) => Err(PemErr::ValidationError)
+                    },
+                Err(_) => Err(PemErr::ValidationError)
             }
             Err(_) => Err(PemErr::ValidationError)
         }
