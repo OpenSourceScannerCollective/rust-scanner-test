@@ -3,8 +3,8 @@ use winnow::combinator::{opt, preceded, terminated};
 use winnow::error::{ContextError, ErrMode};
 use winnow::token::{take_while};
 use crate::detector::winnow::error::{DetectorError, DetectorErrorKind};
-use crate::parser::{charset, common};
-use crate::validator::private_key::pem::{make_pem, validate_key};
+use crate::parser::{charset};
+use crate::r#type::private_key::pem::{BOUNDARY_BEGIN_FOOTER, BOUNDARY_BEGIN_HEADER, BOUNDARY_END, Pem, PemData};
 
 
 // Detector for PEM Format as specified in RFC-7468:
@@ -16,11 +16,8 @@ use crate::validator::private_key::pem::{make_pem, validate_key};
 // Base64 Encoding standard:
 // https://datatracker.ietf.org/doc/html/rfc4648#section-4
 
-const BOUNDARY_BEGIN_HEADER: &str = "-----BEGIN ";
-const BOUNDARY_BEGIN_FOOTER: &str = "-----END ";
-const BOUNDARY_END: &str = "-----";
 
-fn pem_boundary<'s>(begin: &str, end: &str, input: &mut &str) -> PResult<(String, String)> {
+fn pem_boundary<'s>(begin:  &'s str, end:  &'s str, input: &mut &'s str) -> PResult<&'s str> {
     match (
         preceded(
             opt(take_while(1.., char::is_whitespace)
@@ -30,36 +27,37 @@ fn pem_boundary<'s>(begin: &str, end: &str, input: &mut &str) -> PResult<(String
             take_while(1.., char::is_whitespace)
         )),
     ).parse_next(input) {
-        Ok((start, label,end)) => {
-            Ok((String::from(label), format!("{}{}{}", start, label, end)))
+        Ok((_start, label,_end)) => {
+            Ok(label)
         },
         Err(e) => Err(e)
     }
 }
-pub fn pem_header(input: &mut &str) -> PResult<(String, String)> {
+pub fn pem_header<'s>(input: &mut  &'s str) -> PResult<&'s str> {
     pem_boundary(BOUNDARY_BEGIN_HEADER, BOUNDARY_END, input)
 }
-pub fn pem_footer(input: &mut &str) -> PResult<(String, String)> {
+pub fn pem_footer<'s>(input: &mut  &'s str) -> PResult<&'s str> {
     pem_boundary(BOUNDARY_BEGIN_FOOTER, BOUNDARY_END, input)
 }
 
-pub fn pem_data(input: &mut &str) -> PResult<String> {
+pub fn pem_data<'s>(input: &mut  &'s str) -> PResult<String> {
     match (
         take_while(1.., charset::BASE64_WS),
-        opt(take_while(1.., charset::ASCII_WHITESPACE)),
+        Parser::void(opt(take_while(1.., charset::ASCII_WHITESPACE))),
         take_while(0.., charset::BASE64_SYMBOL_PADDING),
         Parser::void(opt(take_while(0.., char::is_whitespace)))
     ).parse_next(input) {
-        Ok( (data, _ws, padding, ())) => {
+        Ok( (data, (), padding, ())) => {
 
             let mut data_str = String::from(data);
             data_str.retain(|c| !c.is_whitespace());
 
-            let padding_size = common::calc_base64_padding(data_str.len());
+            let padding_size = PemData::calc_base64_padding(data_str.len());
             if (padding_size == 0 && padding == "") ||
                 (padding_size == 1 && padding == "=") ||
                 (padding_size == 2 && padding == "==") {
-                Ok(format!("{}{}", data_str, padding))
+                data_str.push_str(padding);
+                Ok(data_str)
             } else {
                 // invalid number of padding characters
                 Err(ErrMode::Backtrack(ContextError::new()))
@@ -79,32 +77,26 @@ pub fn pem_label<'s>(input: &mut &'s str) -> PResult<&'s str> {
         .parse_next(input)
 }
 
-pub fn parse(input: &str) -> Result<(String, String, String), DetectorError> {
+pub fn parse(input: &str) -> Result<Pem, DetectorError> {
     match (
         pem_header,
         pem_data,
         pem_footer
     ).parse_next(&mut &*input) {
-        Ok(((header_label,header),data, (footer_label,footer))) => {
+        Ok(    (header_label,
+                data,
+                footer_label
+               )) => {
 
             // header and footer labels must match
             if header_label != footer_label {
                 return Err(DetectorError{ kind: DetectorErrorKind::NoMatch });
             }
 
-            // reconstruct the pem with parsed information
-            let pem_block = make_pem(header.as_str(), data.as_str(), footer.as_str());
-
-            // validate that it is a real key by extracting the public key
-            let check = validate_key(pem_block.as_str());
-
-            if !check.is_valid() {
-                return Err(DetectorError{ kind: DetectorErrorKind::Unknown });
+            match Pem::from(header_label.to_string(), data, footer_label.to_string()) {
+                Ok(my_pem) => Ok(my_pem),
+                Err(_) => Err(DetectorError{ kind: DetectorErrorKind::Unknown })
             }
-
-            Ok((header_label,
-                data,
-                footer_label ))
         },
         Err(_) => Err(DetectorError{ kind: DetectorErrorKind::NoMatch })
     }

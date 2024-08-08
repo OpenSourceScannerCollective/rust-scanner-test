@@ -1,5 +1,5 @@
 mod detector;
-mod validator;
+mod r#type;
 #[allow(dead_code)]
 pub(crate) mod parser;
 
@@ -45,5 +45,6 @@ KrNsCithPEygwLsHI6tSRPavOqctkrv1SHrRwGziVocQnrdAOgDC6F==
         return;
     }
 
-    println!("[PEM] Result: {}", result.unwrap().0);
+    let my_pem = result.unwrap();
+    println!("[PEM] Result: {}", my_pem.to_string());
 }

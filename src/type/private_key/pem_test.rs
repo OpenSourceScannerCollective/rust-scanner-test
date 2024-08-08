@@ -2,7 +2,8 @@
 
 
 mod tests {
-    use crate::validator;
+    use crate::{detector};
+    use crate::r#type::private_key::pem::PemStatus;
 
     #[test]
     fn tp_valid_key_rsa_1() {
@@ -23,8 +24,15 @@ gOB36ex0dUdXhOPqQf3EZPMeMS28kKcPMloPWbmz1IFiQK/HWpmr7yb3qKCdvhgP
 vhj3eVN6voMtw7o=
 -----END PRIVATE KEY-----"#;
 
-        let result = validator::private_key::pem::validate_key(test_case);
-        assert_eq!(result.is_valid(), true);
+        let result = detector::winnow::private_key::pem::parse(test_case);
+        assert_eq!(result.is_err(), false);
+
+        let mut my_pem = result.unwrap();
+        let is_valid = my_pem.validate();
+        assert_eq!(is_valid.is_err(), false);
+
+        let validation = is_valid.unwrap();
+        assert_eq!(validation, PemStatus::Valid);
     }
 
     #[test]
@@ -46,8 +54,12 @@ gOB36ex0dUdXhOPqQf3EZPMeMS28kKcPMloPWbmz1IFiQK/HWpmr7yb3qKCdvhgP
 vhj3eVN6voMtw7o=
 -----END PRIVATE KEY-----"#;
 
-        let result = validator::private_key::pem::validate_key(test_case);
-        assert_eq!(result.is_valid(), false);
+        let result = detector::winnow::private_key::pem::parse(test_case);
+        assert_eq!(result.is_err(), false);
+
+        let mut my_pem = result.unwrap();
+        let is_valid = my_pem.validate();
+        assert_eq!(is_valid.is_err(), true);
     }
 
     #[test]
@@ -65,8 +77,15 @@ zGKoyYj8mzf5egnFiFKjzV8LzxSjWAz6FkmqRNUGXqtxbjGb45uhcQ0CFFaKPjsi
 1z9fVy7ZdQljvks44bET
 -----END DSA PRIVATE KEY-----"#;
 
-        let result = validator::private_key::pem::validate_key(test_case);
-        assert_eq!(result.is_valid(), true);
+        let result = detector::winnow::private_key::pem::parse(test_case);
+        assert_eq!(result.is_err(), false);
+
+        let mut my_pem = result.unwrap();
+        let is_valid = my_pem.validate();
+        assert_eq!(is_valid.is_err(), false);
+
+        let validation = is_valid.unwrap();
+        assert_eq!(validation, PemStatus::Valid);
     }
 
     #[test]
@@ -84,8 +103,12 @@ zGKoyYj8mzf5egnFiFKjzV8LzxSjWAz6FkmqRNUGXqtxbjGb45uhcQ0CFFaKPjsi
 1z9fVy7ZdQljvks44bET
 -----END DSA PRIVATE KEY-----"#;
 
-        let result = validator::private_key::pem::validate_key(test_case);
-        assert_eq!(result.is_valid(), false);
+        let result = detector::winnow::private_key::pem::parse(test_case);
+        assert_eq!(result.is_err(), false);
+
+        let mut my_pem = result.unwrap();
+        let is_valid = my_pem.validate();
+        assert_eq!(is_valid.is_err(), true);
     }
 
 }

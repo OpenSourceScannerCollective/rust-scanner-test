@@ -60,7 +60,7 @@ mod tests {
 
         let result = private_key::pem::pem_header.parse_next(&mut input);
         assert_eq!(result.is_err(), false);
-        assert_eq!(label, result.unwrap().0.to_owned());
+        assert_eq!(label, result.unwrap().to_owned());
     }
 
     #[test]
@@ -129,9 +129,9 @@ vhj3eVN6voMtw7o="#);
         let result = private_key::pem::parse(input);
         assert_eq!(result.is_err(), false);
 
-        let r = result.unwrap();
-        assert_eq!(label, r.0.to_owned());
-        assert_eq!(pem_data, r.1.to_owned());
+        let my_pem = result.unwrap();
+        assert_eq!(label, my_pem.header_label);
+        assert_eq!(pem_data, my_pem.data.raw().to_owned());
     }
 
     #[test]
@@ -166,9 +166,9 @@ zGKoyYj8mzf5egnFiFKjzV8LzxSjWAz6FkmqRNUGXqtxbjGb45uhcQ0CFFaKPjsi
         let result = private_key::pem::parse(input);
         assert_eq!(result.is_err(), false);
 
-        let r = result.unwrap();
-        assert_eq!(label, r.0.to_owned());
-        assert_eq!(pem_data, r.1.to_owned());
+        let my_pem = result.unwrap();
+        assert_eq!(label, my_pem.header_label);
+        assert_eq!(pem_data, my_pem.data.raw().to_owned());
     }
 
     #[test]
