@@ -17,8 +17,8 @@ detectors created with each manner.
 ### Finding Types
 | ID | Name            | Description                      | Standard / Spec documentation                                                                                                | validation |
 |----|-----------------|----------------------------------|------------------------------------------------------------------------------------------------------------------------------|------------|
-| 1  | AWS API Key     | An Amazon AWS API Key credential | [IAM Unique Identifiers](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html#identifiers-unique-ids) | No         |
-| 2  | PEM Private Key | A PEM formatted private key      | [RFC7468](https://www.rfc-editor.org/rfc/rfc7468)                                                                            | Yes        |
+| 1  | AWS API Key     | An Amazon AWS API Key credential | [IAM Unique Identifiers](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html#identifiers-unique-ids) | Online     |
+| 2  | PEM Private Key | A PEM formatted private key      | [RFC7468](https://www.rfc-editor.org/rfc/rfc7468)                                                                            | Offline    |
 
 
 ### Validation
