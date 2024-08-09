@@ -2,14 +2,22 @@ use crate::detector::winnow::private_key;
 use winnow::Parser;
 use crate::finding_type::private_key::pem_test::{assert_invalid_key, assert_valid_key};
 
-#[test]
-fn tp_valid_label_1() {
-    let test_case = r#"RSA PRIVATE KEY"#;
-    let mut input = test_case;
-
+pub fn assert_valid_label(label: &str) {
+    let mut input = label;
     let result = private_key::pem::pem_label.parse_next(&mut input);
     assert_eq!(result.is_err(), false);
-    assert_eq!(test_case, result.unwrap().to_owned());
+    assert_eq!(label, result.unwrap().to_owned());
+}
+
+pub fn assert_invalid_label(label: &str) {
+    let mut input = label;
+    let result = private_key::pem::pem_label.parse_next(&mut input);
+    assert_eq!(result.is_err(), true);
+}
+
+#[test]
+fn tp_valid_label_1() {
+    assert_valid_label(r#"RSA PRIVATE KEY"#);
 }
 
 #[test]
@@ -24,71 +32,60 @@ fn tp_invalid_label_1() {
 }
 
 #[test]
-fn tp_invalid_label_2() {
-    let test_case = r#"RSA PRIVATE  KEY"#; // double space
-    let mut input = test_case;
-
-    let result = private_key::pem::pem_label.parse_next(&mut input);
-    assert_eq!(result.is_err(), true);
+fn tp_invalid_label_2() { // double space
+    assert_invalid_label(r#"RSA PRIVATE  KEY"#);
 }
 
 #[test]
-fn tp_invalid_label_3() {
-    let test_case = r#" RSA PRIVATE KEY"#; // start with space
-    let mut input = test_case;
-
-    let result = private_key::pem::pem_label.parse_next(&mut input);
-    assert_eq!(result.is_err(), true);
+fn tp_invalid_label_3() { // start with space
+    assert_invalid_label(r#" RSA PRIVATE KEY"#);
 }
 
 #[test]
-fn tp_invalid_label_4() {
-    let test_case = r#"RSA PRIVATE KEY "#; // end with space
-    let mut input = test_case;
-
-    let result = private_key::pem::pem_label.parse_next(&mut input);
-    assert_eq!(result.is_err(), true);
+fn tp_invalid_label_4() {// end with space
+    assert_invalid_label(r#"RSA PRIVATE KEY "#);
 }
 
-#[test]
-fn tp_valid_header_1() {
-    let label = r#"RSA PRIVATE KEY"#;
-    let test_case = r#"-----BEGIN RSA PRIVATE KEY-----"#;
-    let mut input = test_case;
+pub fn assert_valid_header(label: &str) {
+    let test_case = [
+        r#"-----BEGIN "#,
+        label,
+        r"-----"
+    ].concat();
+    let mut input = test_case.as_str();
 
     let result = private_key::pem::pem_header.parse_next(&mut input);
     assert_eq!(result.is_err(), false);
     assert_eq!(label, result.unwrap().to_owned());
 }
 
-#[test]
-fn fp_invalid_header_1() {
-    let test_case = r#"-----BEGIN RSA--PRIVATE KEY-----"#;
-    let mut input = test_case;
-
+pub fn assert_invalid_header(label: &str) {
+    let mut input = label;
     let result = private_key::pem::pem_header.parse_next(&mut input);
     assert_eq!(result.is_err(), true);
+}
+
+#[test]
+fn tp_valid_header_1() {
+    assert_valid_header(r#"RSA PRIVATE KEY"#);
+}
+
+#[test]
+fn fp_invalid_header_1() {
+    assert_invalid_header(r#"-----BEGIN RSA--PRIVATE KEY-----"#);
 }
 
 #[test]
 fn fp_invalid_header_2() {
-    let test_case = r#"-----BEGIN RSA  PRIVATE KEY-----"#;
-    let mut input = test_case;
-
-    let result = private_key::pem::pem_header.parse_next(&mut input);
-    assert_eq!(result.is_err(), true);
+    assert_invalid_header(r#"-----BEGIN RSA  PRIVATE KEY-----"#);
 }
 
 #[test]
 fn fp_invalid_header_3() {
-    let test_case = r#"-----BEGIN  RSA PRIVATE KEY-----"#;
-    let mut input = test_case;
-
-    let result = private_key::pem::pem_header.parse_next(&mut input);
-    assert_eq!(result.is_err(), true);
+    assert_invalid_header(r#"-----BEGIN  RSA PRIVATE KEY-----"#);
 }
 
-// TODO: test additional dash in header
+// TODO: test trailing dash in header
 // #[test]
 // fn fp_invalid_header_4() {
 //     let test_case = r#"-----BEGIN RSA PRIVATE KEY------"#;
@@ -100,32 +97,20 @@ fn fp_invalid_header_3() {
 
 #[test]
 fn fp_invalid_footer_1() {
-    let test_case = r#"-----END RSA--PRIVATE KEY-----"#;
-    let mut input = test_case;
-
-    let result = private_key::pem::pem_header.parse_next(&mut input);
-    assert_eq!(result.is_err(), true);
+    assert_invalid_header(r#"-----END RSA--PRIVATE KEY-----"#);
 }
 
 #[test]
 fn fp_invalid_footer_2() {
-    let test_case = r#"-----END RSA  PRIVATE KEY-----"#;
-    let mut input = test_case;
-
-    let result = private_key::pem::pem_header.parse_next(&mut input);
-    assert_eq!(result.is_err(), true);
+    assert_invalid_header( r#"-----END RSA  PRIVATE KEY-----"#);
 }
 
 #[test]
 fn fp_invalid_footer_3() {
-    let test_case = r#"-----END  RSA PRIVATE KEY-----"#;
-    let mut input = test_case;
-
-    let result = private_key::pem::pem_header.parse_next(&mut input);
-    assert_eq!(result.is_err(), true);
+    assert_invalid_header(r#"-----END  RSA PRIVATE KEY-----"#);
 }
 
-// TODO: test additional dash in header
+// TODO: test trailing dash in footer
 // #[test]
 // fn fp_invalid_footer_4() {
 //     let test_case = r#"-----BEGIN RSA PRIVATE KEY------"#;
