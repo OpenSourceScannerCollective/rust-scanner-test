@@ -119,42 +119,28 @@ impl Pem {
 
     pub fn to_string(&self) -> Result<String, PemErr> {
 
-        if self.private_key.is_none() && self.cert.is_none() {
-            match self.get_kind() {
-                Ok(_) => {}
-                Err(e) => {
-                    return Err(e)
-                }
-            }
+        if self.private_key.is_none() && self.cert.is_none()  {
+            self.get_kind()?;
         }
 
-        if self.private_key.is_some() {
-            return match self.private_key.clone().unwrap().private_key_to_pem_pkcs8() {
-                Ok(pkey) => {
-                    let pkey_pem = String::from_utf8(pkey);
-                    if pkey_pem.is_err() {
-                        return Err(PemErr::Unknown); // TODO: better error handling
-                    }
-                    Ok(pkey_pem.unwrap())
-                }
-                Err(_) => Err(PemErr::Unknown)
+        match
+            match self.private_key {
+                None => match self.cert {
+                    None => return Err(PemErr::Unknown),
+                    Some(_) => self.cert.clone().unwrap().to_pem()
+                },
+                Some(_) => self.private_key.clone().unwrap().private_key_to_pem_pkcs8()
             }
-        }
-
-        if self.cert.is_some() {
-            return match self.cert.clone().unwrap().to_pem() {
-                Ok(cert) => {
-                    let cert_pem = String::from_utf8(cert);
-                    if cert_pem.is_err() {
-                        return Err(PemErr::Unknown); // TODO: better error handling
-                    }
-                    Ok(cert_pem.unwrap())
+        {
+            Ok(secret) => {
+                let pem_result = String::from_utf8(secret);
+                if pem_result.is_err() {
+                    return Err(PemErr::Unknown); // TODO: better error handling
                 }
-                Err(_) => Err(PemErr::Unknown)
+                Ok(pem_result.unwrap())
             }
+            Err(_) => Err(PemErr::Unknown)
         }
-
-        Err(PemErr::Unknown) // TODO: better error handling
     }
 
     fn data_formatted(&self) -> String {
@@ -180,11 +166,7 @@ impl Pem {
         match Pem::validate_input(self) {
             Ok(status) => {
                 self.status = Some(status);
-                let kind = self.get_kind();
-                if kind.is_err() {
-                    return Err(PemErr::Unknown);
-                }
-                self.kind = Some(kind.unwrap());
+                self.kind = Some(self.get_kind()?);
                 Ok(status)
             }
             Err(e) => Err(e)
