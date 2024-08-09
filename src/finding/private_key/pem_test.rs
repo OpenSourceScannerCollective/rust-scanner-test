@@ -1,6 +1,6 @@
 
 use crate::{detector};
-use crate::finding_type::private_key::pem::PemStatus;
+use crate::finding::private_key::pem::PemStatus;
 
 #[allow(unused_variables)]
 pub fn assert_valid_key(private_key: &str, public_key: &str) {

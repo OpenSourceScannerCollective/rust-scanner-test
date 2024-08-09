@@ -1,6 +1,6 @@
 use crate::detector::winnow::private_key;
 use winnow::Parser;
-use crate::finding_type::private_key::pem_test::{assert_invalid_key, assert_valid_key};
+use crate::finding::private_key::pem_test::{assert_invalid_key, assert_valid_key};
 
 pub fn assert_valid_label(label: &str) {
     let mut input = label;
