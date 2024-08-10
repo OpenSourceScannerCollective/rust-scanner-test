@@ -1,0 +1,22 @@
+[package]
+name = "rust-scanner-test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chumsky = "0.9.3"
+openssl = "0.10.66"
+pest = "2.7.11"
+vectorscan = "0.1.0"
+winnow = "0.6.16"
+
+[[example]]
+name = "main"
+path = "examples/main.rs"
+test = false
+bench = false
+
+[lib]
+name = "rst_lib"
+test = true
+bench = false
