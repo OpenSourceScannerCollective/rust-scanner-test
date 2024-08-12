@@ -1,4 +1,4 @@
-pub(crate) mod api_key;
+pub mod api_key;
 
 #[cfg(test)]
-pub(crate) mod test;
+pub mod test;

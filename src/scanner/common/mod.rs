@@ -1,2 +1,2 @@
 #[allow(dead_code)]
-pub(crate) mod charset;
+pub mod charset;

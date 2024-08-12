@@ -1,4 +1,4 @@
-pub(crate) mod pem;
+pub mod pem;
 
 #[cfg(test)]
-pub(crate) mod test;
+pub mod test;

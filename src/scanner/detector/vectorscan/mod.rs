@@ -1,4 +1,4 @@
 #[allow(dead_code)]
-pub(crate) mod aws;
+pub mod aws;
 #[allow(dead_code)]
-pub(crate) mod private_key;
+pub mod private_key;

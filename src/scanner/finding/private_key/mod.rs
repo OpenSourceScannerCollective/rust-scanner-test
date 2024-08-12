@@ -1,5 +1,5 @@
 #[allow(dead_code)]
-pub(crate) mod pem;
+pub mod pem;
 
 #[cfg(test)]
-pub(crate) mod pem_test;
+pub mod test;

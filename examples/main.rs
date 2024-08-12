@@ -58,5 +58,4 @@ vhj3eVN6voMtw7o=
         return;
     }
     println!("[PEM] Public Key:\n {}", pub_key.unwrap().trim());
-
 }

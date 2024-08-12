@@ -1,5 +1,5 @@
 #[allow(dead_code)]
-pub(crate) mod error;
+pub mod error;
 
 #[allow(dead_code)]
 pub mod aws;

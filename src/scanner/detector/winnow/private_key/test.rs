@@ -1,5 +1,5 @@
 use crate::scanner::detector::winnow::private_key;
-use crate::scanner::finding::private_key::pem_test::{assert_invalid_key, assert_valid_key};
+use crate::scanner::finding::private_key::test::{assert_invalid_key, assert_valid_key};
 use winnow::Parser;
 
 pub fn assert_valid_label(label: &str) {

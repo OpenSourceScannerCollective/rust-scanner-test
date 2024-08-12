@@ -1,5 +1,5 @@
 #[allow(dead_code)]
-pub(crate) mod common;
+pub mod common;
 pub mod detector;
-pub(crate) mod finding;
-pub(crate) mod source;
+pub mod finding;
+pub mod source;
