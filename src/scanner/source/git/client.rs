@@ -1,3 +1,4 @@
+use std::{fs};
 use git2::{Commit, Error, ErrorClass, ErrorCode, Repository, Sort};
 use tempfile::TempDir;
 
@@ -6,118 +7,94 @@ pub const GITHUB_ROOT_SSH: &str = "git@github.com:";
 pub const GITHUB_POSTFIX: &str = ".git";
 pub const GITHUB_ROOT_FILESYSTEM: &str = "file://";
 
-#[derive(Default)]
-enum GitUrlKind {
+#[derive(Default, Clone)]
+pub enum GitUrlKind {
     #[default]
     HTTPS,
+    HTTP,
     SSH,
     FILESYSTEM,
 }
 
-trait GitUrl {
-    fn get_kind(&self) -> &GitUrlKind;
-    fn get_url(&self) -> Result<(GitUrlKind, String), GitErr>;
+#[derive(Debug)]
+pub enum GitErr {
+    Unknown,
+    UnableToWalk,
+    CloneOrOpenFail,
+    UrlUnknown,
+    UrlInvalid,
+    TempDirFailed,
+    InvalidKind,
+    CloneFailed,
 }
 
-#[derive(Default)]
-struct GitHubUrl<'a> {
-    kind: GitUrlKind,
-    pub owner: &'a str,
-    pub repo_name: &'a str,
-    pub root: &'a str,
+pub trait GitPath {
+    fn get_path(&self) -> Result<(GitUrlKind, String), GitErr>;
+}
+
+pub struct GitClient<'a> {
+    url: &'a dyn GitPath,
     repo: Option<Repository>,
 }
 
-impl GitUrl for GitHubUrl<'_> {
-    fn get_kind(&self) -> &GitUrlKind {
-        &self.kind
+impl GitClient<'_> {
+    pub fn from(git_url: &dyn GitPath) -> Result<GitClient, GitErr> {
+        let mut client = GitClient {
+            url: git_url,
+            repo: None,
+        };
+        client.repo = Some(client.clone_or_open()?.0);
+
+        Ok(client)
     }
 
-    fn get_url(&self) -> Result<(GitUrlKind, String), GitErr> {
-        Ok(match &self.kind {
-            GitUrlKind::HTTPS => (GitUrlKind::HTTPS, self.get_url_http()),
-            GitUrlKind::SSH => (GitUrlKind::SSH, self.get_url_ssh()),
-            _ => return Err(GitErr::InvalidKind),
-        })
-    }
-}
-
-impl GitHubUrl<'_> {
-    pub fn new<'a>(
-        owner: &'a str,
-        repo_name: &'a str,
-        root: Option<&'a str>,
-    ) -> Result<GitHubUrl<'a>, GitErr> {
-        match root.unwrap_or_else(|| GITHUB_ROOT_HTTPS) {
-            the_root => Ok(GitHubUrl {
-                kind: Self::detect_url_kind(the_root)?,
-                owner,
-                repo_name,
-                root: the_root,
-                repo: None,
-            }),
-        }
-    }
-    fn detect_url_kind(url: &str) -> Result<GitUrlKind, GitErr> {
-        Ok(match String::from(url).get(0..8).unwrap_or_default() {
-            "git@" => GitUrlKind::SSH,
-            "https://" => GitUrlKind::HTTPS,
-            "file://" => GitUrlKind::FILESYSTEM,
-            _ => return Err(GitErr::UrlUnknown),
-        })
-    }
-    fn get_url_http(&self) -> String {
-        [self.root, self.owner, "/", self.repo_name, GITHUB_POSTFIX].concat()
-    }
-    fn get_url_ssh(&self) -> String {
-        [
-            GITHUB_ROOT_SSH,
-            self.owner,
-            "/",
-            self.repo_name,
-            GITHUB_POSTFIX,
-        ]
-        .concat()
-    }
-    fn get_target_path(&self) -> Result<String, GitErr> {
+    fn get_target_path(&self) -> Result<(String, bool), GitErr> {
         // TODO: Support user specified targets
         match TempDir::new() {
             Ok(the_dir) => match the_dir.path().to_str() {
                 None => Err(GitErr::TempDirFailed),
-                Some(path) => Ok(String::from(path)),
+                Some(path) => Ok((String::from(path), true)),
             },
             Err(_) => Err(GitErr::TempDirFailed),
         }
     }
-    fn clone_or_open(&self) -> Result<Repository, GitErr> {
-        match self.get_url() {
-            Ok((kind, path)) => {
-                match match kind {
-                    GitUrlKind::HTTPS | GitUrlKind::SSH => {
-                        Repository::clone(path.as_str(), self.get_target_path()?)
-                    }
-                    GitUrlKind::FILESYSTEM => Repository::open(path),
-                } {
-                    Ok(repo) => Ok(repo),
-                    Err(_) => Err(GitErr::CloneOrOpenFail),
-                }
+
+    fn clone_or_open(&self) -> Result<(Repository, bool), GitErr> {
+
+        let (kind, path) = self.url.get_path()?;
+
+        match kind {
+            GitUrlKind::HTTPS |GitUrlKind::HTTP | GitUrlKind::SSH => {
+                let target = self.get_target_path()?;
+                let repo = Repository::clone(path.as_str(), target.0);
+                if repo.is_err() { return Err(GitErr::CloneFailed) }
+                Ok((repo.unwrap(), target.1))
             }
-            Err(e) => Err(e),
+            GitUrlKind::FILESYSTEM => {
+                let repo = Repository::open(path.as_str());
+                if repo.is_err() { return Err(GitErr::CloneFailed) }
+                Ok((repo.unwrap(), false))
+            }
         }
     }
 
-    fn walk<F>(&self, process: F) -> Result<(), Error>
+    pub fn walk<F>(&self, process: F) -> Result<(), Error>
     where
         F: Fn(&Repository, &Commit) -> bool,
     {
-        let repo = match self.clone_or_open() {
-            Ok(the_repo) => the_repo,
-            Err(_) => { return Err(Error::new(
-                ErrorCode::Directory,
-                ErrorClass::Filesystem,
-                "Unable to clone or open repository."
-            )); }
+        let repo_result = match self.clone_or_open() {
+            Ok((the_repo, is_temp_dir)) => (the_repo, is_temp_dir),
+            Err(_) => {
+                return Err(Error::new(
+                    ErrorCode::Directory,
+                    ErrorClass::Filesystem,
+                    "Unable to clone or open repository.",
+                ));
+            }
         };
+
+        let repo = repo_result.0;
+        let is_temp_dir = repo_result.1;
 
         let mut walker = repo.revwalk()?;
         walker.push_head()?;
@@ -129,17 +106,30 @@ impl GitHubUrl<'_> {
             }
         }
 
+        // cleanup temp dir
+        if is_temp_dir {
+            // TODO: better error handling
+            let temp_path = repo.path().to_str().unwrap_or("Unknown");
+            let res = fs::remove_dir_all(temp_path);
+
+            if res.is_err() {
+                println!("Unable to delete temp dir: {}", temp_path);
+            } else {
+                println!("Deleted temp dir: {}", temp_path);
+            }
+        }
+
         Ok(())
     }
 }
 
-#[derive(Debug)]
-enum GitErr {
-    Unknown,
-    UnableToWalk,
-    CloneOrOpenFail,
-    UrlUnknown,
-    TempDirFailed,
-    InvalidKind,
-    CloneFailed,
+#[derive(Default)]
+pub struct FileSystemPath<'a> {
+    pub path: &'a str,
+}
+
+impl GitPath for FileSystemPath<'_> {
+    fn get_path(&self) -> Result<(GitUrlKind, String), GitErr> {
+        Ok((GitUrlKind::FILESYSTEM, String::from(self.path)))
+    }
 }

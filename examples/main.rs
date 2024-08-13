@@ -1,8 +1,10 @@
 use rst_lib::scanner::detector::winnow::{aws::api_key, private_key::pem};
+use rst_lib::scanner::source::git::client::{FileSystemPath, GitClient};
 
 fn main() {
     aws_key();
     pem_key();
+    walker_texas_ranger();
 }
 
 fn aws_key() {
@@ -58,4 +60,32 @@ vhj3eVN6voMtw7o=
         return;
     }
     println!("[PEM] Public Key:\n {}", pub_key.unwrap().trim());
+}
+
+fn walker_texas_ranger() {
+
+    let git_url = FileSystemPath {
+        path: "./",
+    };
+
+    let c_result = GitClient::from(&git_url);
+    assert_eq!(c_result.is_err(), false);
+
+    let client = c_result.unwrap();
+    match client.walk(|_repo, commit| {
+        // Get the committer
+        let committer = commit.committer();
+
+        // Extract committer information
+        let name = committer.name().unwrap_or("Unknown");
+        let email = committer.email().unwrap_or("Unknown");
+        let time = committer.when().seconds();
+
+        println!("Committer: {} <{}>\nTimestamp: {}", name, email, time);
+
+        return true;
+    }) {
+        Ok(_) => {}
+        Err(_) => {}
+    }
 }

@@ -157,3 +157,4 @@ pub const BASE64_WITH_PADDING_WS: (
     ),
     (RangeInclusive<char>, char),
 ) = (BASE64_WITH_PADDING, ASCII_WHITESPACE);
+pub const URL_CHARS: RangeInclusive<char> = '!'..='~';
